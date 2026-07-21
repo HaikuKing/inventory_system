@@ -5,12 +5,34 @@
 #define MAX_ITEMS 100
 #define FILE_NAME "inventory.dat"
 
+typedef enum {
+    MISC,
+    FOOD,
+    ELECTRONICS,
+    CLOTHING,
+    // Additional categories can be added here
+} Category;
+
+typedef union {
+    float nutritionalValue; // NEW FEATURE: Only relevant for FOOD category items
+    struct {
+        float warrantyPeriod; // Placeholder for future ELECTRONICS category attributes
+        float screenSize;     // Placeholder for future ELECTRONICS category attributes
+    };
+    char size[10]; // Placeholder for future CLOTHING category attributes
+    // Future category-specific attributes can be added here
+} CategoryAttributes;
+
 // Define the blueprint structure for our inventory items
 typedef struct {
     int id;
     char name[50]; // Storage array allocated for string variables
     int quantity;
+    float weight; // NEW FEATURE: Individual item weight for logistics calculations
+    float totalWeight; // NEW FEATURE: Tracks cumulative weight for logistics
     float price;
+    Category category;
+    CategoryAttributes attributes; // NEW FEATURE: Union to hold category-specific attributes
 } Item;
 
 // Global memory array acts as our runtime database cache
@@ -23,6 +45,7 @@ void addItem();
 void displayInventory();
 void searchItem();
 void editItemQuantity(); // NEW FEATURE: Restock or reduce inventory stock
+void editItemPrice();    // NEW FEATURE: Adjust pricing for items
 void deleteItem();       // NEW FEATURE: Completely purge an item from system records
 
 // File Management Prototypes
@@ -43,11 +66,11 @@ int main() {
 
     do {
         showMenu();
-        printf("Enter your choice (1-6): ");
+        printf("Enter your choice (1-7): ");
 
         // Robust numeric checking guards loop against breaking on unexpected character entries
         if (scanf("%d", &choice) != 1) {
-            printf("\n[ERROR] Invalid key signature. Please enter a valid menu number.\n");
+            printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[ERROR] Invalid key signature. Please enter a valid menu number.\n");
             while (getchar() != '\n'); // Flushes the input buffer stream completely
             continue;
         }
@@ -57,14 +80,15 @@ int main() {
             case 2: displayInventory(); break;
             case 3: searchItem(); break;
             case 4: editItemQuantity(); break; // Direct modification pipeline
-            case 5: deleteItem(); break;       // Target elimination pipeline
-            case 6: 
+            case 5: editItemPrice(); break;    // Price modification pipeline
+            case 6: deleteItem(); break;       // Target elimination pipeline
+            case 7: 
                 printf("\nExiting the inventory system safely. Goodbye!\n"); 
                 break;
             default: 
-                printf("\n[ERROR] Out of option boundaries. Select between 1 and 6.\n");
+                printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[ERROR] Out of option boundaries. Select between 1 and 7.\n");
         }
-    } while (choice != 6);
+    } while (choice != 7);
 
     return 0;
 }
@@ -78,8 +102,9 @@ void showMenu() {
     printf("\n2. Display & Sort Items");
     printf("\n3. Search Item by ID");
     printf("\n4. Edit Item Quantity (Restock)");
-    printf("\n5. Delete Item from Records");
-    printf("\n6. Exit");
+    printf("\n5. Edit Item Price");
+    printf("\n6. Delete Item from Records");
+    printf("\n7. Exit");
  printf("\n==================================\n");
 }
 
@@ -87,19 +112,19 @@ void showMenu() {
 void addItem() {
 // Array safety boundary check
     if (itemCount >= MAX_ITEMS) {
-        printf("\n[ERROR] Inventory memory limits hit! Delete items first.\n");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[ERROR] Inventory memory limits hit! Delete items first.\n");
         return;
     }
 
     Item newItem;
 
-    printf("\nEnter Unique Item ID (Integer): ");
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\nEnter Unique Item ID (Integer): ");
     scanf("%d", &newItem.id);
 
 // Scan loop ensures Primary Key (ID uniqueness constraint) is strictly protected
     for (int i = 0; i < itemCount; i++) {
         if (inventory[i].id == newItem.id) {
-            printf("[ERROR] Primary Key violation. ID %d already exists.\n", newItem.id);
+            printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[ERROR] Primary Key violation. ID %d already exists.\n", newItem.id);
             return;
         }
     }
@@ -110,8 +135,52 @@ void addItem() {
     printf("Enter Quantity: ");
     scanf("%d", &newItem.quantity);
 
+    printf("Enter Item Weight: ");
+    scanf("%f", &newItem.weight);
+
+    newItem.totalWeight = newItem.quantity * newItem.weight; // Calculate total weight based on quantity
+    printf("Total Weight for this item: %.2f\n", newItem.totalWeight);
+
     printf("Enter Price: ");
     scanf("%f", &newItem.price);
+
+    printf("Select Category (0: MISC, 1: FOOD, 2: ELECTRONICS, 3: CLOTHING): ");
+    int categoryChoice;
+    scanf("%d", &categoryChoice);
+    if (categoryChoice < 0 || categoryChoice > 3) {
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[ERROR] Invalid category selection. Defaulting to MISC.\n");
+        newItem.category = MISC;
+    } else {
+        newItem.category = (Category)categoryChoice;
+        switch (newItem.category) {
+            case FOOD:
+                printf("Category set to FOOD.\n");
+                printf("Enter Nutritional Value: ");
+                scanf("%f", &newItem.attributes.nutritionalValue); // NEW FEATURE: Capture nutritional value for food items
+                break;
+            case ELECTRONICS:
+                printf("Category set to ELECTRONICS.\n");
+                printf("Enter Warranty Period (in months): ");
+                scanf("%f", &newItem.attributes.warrantyPeriod);
+                printf("Enter Screen Size (in inches): ");
+                scanf("%f", &newItem.attributes.screenSize);
+                break;
+            case CLOTHING:
+                printf("Category set to CLOTHING.\n");
+                printf("Enter the size (e.g., S, M, L, XL, UNKNOWN): ");
+                int sizeInput;
+                scanf("%d", &sizeInput);
+                if (sizeInput < 0 || sizeInput > 3) {
+                    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[ERROR] Invalid category selection. Defaulting to UNKNOWN.\n");
+                    strcpy(newItem.attributes.size, "UNKNOWN");
+                } else {
+                    scanf(" %s", newItem.attributes.size); // Assuming size is a string attribute for clothing
+                }
+                break;
+            default:
+                printf("Category set to MISC.\n");
+        }
+    }
 
 // Save item structurally into current available index slot
     inventory[itemCount] = newItem;
@@ -124,7 +193,7 @@ void addItem() {
 // Display mechanism featuring advanced multi-attribute and dual-direction sorting options
 void displayInventory() {
     if (itemCount == 0) {
-        printf("\n[INFO] Database is blank. No records available to display.\n");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[INFO] Database is blank. No records available to display.\n");
         return;
     }
 
@@ -177,7 +246,7 @@ void displayInventory() {
 // Performs a linear array search scanning key IDs
 void searchItem() {
     if (itemCount == 0) {
-        printf("\n[INFO] Search canceled. Database is empty.\n");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[INFO] Search canceled. Database is empty.\n");
         return;
     }
 
@@ -187,15 +256,33 @@ void searchItem() {
 
     for (int i = 0; i < itemCount; i++) {
         if (inventory[i].id == searchId) {
-            printf("\n=== Record Retrieved! ===");
+            printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n=== Record Retrieved! ===");
             printf("\nID:       %d", inventory[i].id);
             printf("\nName:     %s", inventory[i].name);
             printf("\nQuantity: %d", inventory[i].quantity);
             printf("\nPrice:    $%.2f\n", inventory[i].price);
+            printf("\nCategory: ");
+            switch (inventory[i].category) {
+                case FOOD:
+                    printf("FOOD\n");
+                    printf("Nutritional Value: %.2f\n", inventory[i].attributes.nutritionalValue);
+                    break;
+                case ELECTRONICS:
+                    printf("ELECTRONICS\n");
+                    printf("Warranty Period: %.2f months\n", inventory[i].attributes.warrantyPeriod);
+                    printf("Screen Size: %.2f inches\n", inventory[i].attributes.screenSize);
+                    break;
+                case CLOTHING:
+                    printf("CLOTHING\n");
+                    printf("Size: %s\n", inventory[i].attributes.size);
+                    break;
+                default:
+                    printf("MISC\n"); break;
+            }
             return; // Target found, break context out early
         }
     }
-    printf("\n[ERROR] Profile search failed. ID %d does not exist.\n", searchId);
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[ERROR] Profile search failed. ID %d does not exist.\n", searchId);
 }
 
 // Modifies quantity parameters for an item
@@ -206,7 +293,41 @@ void editItemQuantity() {
     }
 
     int targetId, foundIndex = -1;
-    printf("\nEnter target Item ID to update stock quantity: ");
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\nEnter target Item ID to update stock quantity: ");
+    scanf("%d", &targetId);
+
+    // Locate structural array coordinate matching ID
+    for (int i = 0; i < itemCount; i++) {
+        if (inventory[i].id == targetId) {
+            foundIndex = i;
+            break;
+        }
+    }
+
+    if (foundIndex == -1) {
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[ERROR] Item ID not found.\n");
+        return;
+    }
+
+    // Output live parameters to operator
+    printf("\nCurrent status of \"%s\": %d items in stock.\n", inventory[foundIndex].name, inventory[foundIndex].quantity);
+
+    printf("Enter new total stock quantity value: ");
+    scanf("%d", &inventory[foundIndex].quantity);
+
+    // Sync structural adjustments safely to disk file
+    saveToFile();
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[SUCCESS] Quantity metrics updated and synchronized to storage file.\n");
+}
+
+void editItemPrice() {
+    if (itemCount == 0) {
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[INFO] Edit canceled. Database is empty.\n");
+        return;
+    }
+
+    int targetId, foundIndex = -1;
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\nEnter target Item ID to update price: ");
     scanf("%d", &targetId);
 
     // Locate structural array coordinate matching ID
@@ -223,24 +344,24 @@ void editItemQuantity() {
     }
 
     // Output live parameters to operator
-    printf("\nCurrent status of \"%s\": %d items in stock.\n", inventory[foundIndex].name, inventory[foundIndex].quantity);
+    printf("\nCurrent price of \"%s\": $%.2f\n", inventory[foundIndex].name, inventory[foundIndex].price);
 
-    printf("Enter new total stock quantity value: ");
-    scanf("%d", &inventory[foundIndex].quantity);
+    printf("Enter new price value: ");
+    scanf("%f", &inventory[foundIndex].price);
 
     // Sync structural adjustments safely to disk file
     saveToFile();
-    printf("\n[SUCCESS] Quantity metrics updated and synchronized to storage file.\n");
+    printf("\n[SUCCESS] Price metrics updated and synchronized to storage file.\n");
 }
 // Drops record entirely and shifts structural metrics inward to compress arrays safely
 void deleteItem() {
     if (itemCount == 0) {
-        printf("\n[INFO] Deletion canceled. Database is empty.\n");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[INFO] Deletion canceled. Database is empty.\n");
         return;
     }
 
     int targetId, foundIndex = -1;
-    printf("\nEnter Item ID to permanently purge from logs: ");
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\nEnter Item ID to permanently purge from logs: ");
     scanf("%d", &targetId);
 
     // Pinpoint address matching unique entry criteria
@@ -266,7 +387,7 @@ void deleteItem() {
 
     // Overwrite old storage records to complete the deletion process on disk
     saveToFile();
-    printf("\n[SUCCESS] Item removed. Local storage updated.\n");
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[SUCCESS] Item removed. Local storage updated.\n");
 }
 
 // Writes continuous binary system blocks cleanly into local file architectures
@@ -274,7 +395,7 @@ void saveToFile() {
     // Open using Write Binary ("wb") settings which creates or overwrites clean targets
     FILE *file = fopen(FILE_NAME, "wb"); 
     if (file == NULL) {
-        printf("[CRITICAL ERROR] OS rejected storage write handle context assignment.\n");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n[CRITICAL ERROR] OS rejected storage write handle context assignment.\n");
         return;
     }
 
