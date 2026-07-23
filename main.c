@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MAX_ITEMS 100
 #define FILE_NAME "inventory.dat"
@@ -436,8 +437,25 @@ void loadFromFile() {
 
 // QuickSort String Alphabetical Comparator Execution Engine
 int compareByName(const void *a, const void *b) {
-    // Utilizes native strcmp and flips outcomes against direction modifier tags
-    return strcmp(((Item *)a)->name, ((Item *)b)->name) * sortDirection;
+    const Item *itemA = (const Item *)a;
+    const Item *itemB = (const Item *)b;
+    const char *nameA = itemA->name;
+    const char *nameB = itemB->name;
+
+    while (*nameA != '\0' && *nameB != '\0') {
+        int diff = tolower((unsigned char)*nameA) - tolower((unsigned char)*nameB);
+        if (diff != 0) {
+            return diff * sortDirection;
+        }
+        nameA++;
+        nameB++;
+    }
+
+    if (*nameA == '\0' && *nameB == '\0') {
+        return 0;
+    }
+
+    return (*nameA == '\0') ? -1 * sortDirection : 1 * sortDirection;
 }
 
 // QuickSort Floating Point Price Comparator Execution Engine
