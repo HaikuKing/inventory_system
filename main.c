@@ -432,7 +432,8 @@ void loadFromFile() {
     int compareById(const void *a, const void *b) {
     int idA = ((Item *)a)->id;
     int idB = ((Item *)b)->id;
-    // Returns negative value if structure order satisfies parameters, otherwise positivereturn (idA - idB) sortDirection;
+    // Returns negative value if structure order satisfies parameters, otherwise positive
+    return (idA - idB) * sortDirection;
 }
 
 // QuickSort String Alphabetical Comparator Execution Engine
