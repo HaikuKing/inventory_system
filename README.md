@@ -3,9 +3,10 @@ This program is intended to be an inventory, or digital storage, system. You sho
 
 # Installation
 1. You will need to clone this repository.
-```git clone```
+```git clone https://github.com/HaikuKing/inventory_system```
 
-2. Enter the directory where you put this project.
+2. Enter the inventory_system folder that was just created.
+```cd inventory_system```
 
 3. Compile the main.c file and name the output file. 
 ```gcc ./main.c -o execute```
